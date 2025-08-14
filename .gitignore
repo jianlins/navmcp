@@ -1,3 +1,5 @@
 .data
 .junie
 .idea
+.pyc
+__pycache__/
