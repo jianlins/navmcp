@@ -8,15 +8,15 @@ import asyncio
 import time
 import tempfile
 import os
-from typing import Callable, Dict, Any, Optional, Annotated
+from typing import Callable, Dict, Any, Optional, Annotated, Union
 from pathlib import Path
 
 from pydantic import BaseModel, Field
 from loguru import logger
 from markitdown import MarkItDown
+import markdownify
 
 from server.utils.net import validate_url_security, normalize_url
-
 
 class ConvertToMarkdownInput(BaseModel):
     """Input schema for convert_to_markdown tool."""
@@ -35,7 +35,6 @@ class ConvertToMarkdownInput(BaseModel):
         max_length=50000
     )
 
-
 class ConvertToMarkdownOutput(BaseModel):
     """Output schema for convert_to_markdown tool."""
     markdown: str = Field(description="Converted markdown content")
@@ -45,10 +44,120 @@ class ConvertToMarkdownOutput(BaseModel):
     error: Optional[str] = Field(None, description="Error message if status is 'error'")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
-
 def setup_convert_tools(mcp, get_browser_manager: Callable):
     """Setup conversion-related MCP tools."""
-    
+
+    # DEBUG: Print all registered tool names after setup
+    import sys
+    def _debug_print_tools():
+        try:
+            print("Registered tools in MCP (convert):", file=sys.stderr)
+            print("Attributes of mcp:", dir(mcp), file=sys.stderr)
+            if hasattr(mcp, "get_tools"):
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # If already running, schedule and wait for result
+                        future = asyncio.ensure_future(mcp.get_tools())
+                        loop.run_until_complete(future)
+                        tool_list = future.result()
+                    else:
+                        tool_list = loop.run_until_complete(mcp.get_tools())
+                    print("Tool list:", tool_list, file=sys.stderr)
+                except Exception as e:
+                    print(f"Error running get_tools: {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error printing tool names: {e}", file=sys.stderr)
+
+    @mcp.tool()
+    async def convert_file_to_markdown(
+        input_path: Annotated[str, Field(
+            description="Path to the HTML or PDF file to convert"
+        )],
+        output_path: Annotated[str, Field(
+            description="Path to write the markdown output file"
+        )],
+        element_id: Annotated[Optional[str], Field(
+            description="Optional id of the HTML element to extract and convert. If provided and found, only that element's content will be converted."
+        )] = ""
+    ) -> Dict[str, Any]:
+        """
+        Convert a local HTML or PDF file to markdown and write to output_path.
+
+        Usage:
+        - To convert the entire file, omit element_id.
+        - To convert only a specific HTML element, provide element_id (e.g., "article-details").
+        If element_id is provided and found in HTML, only that element's content will be converted.
+
+        Example:
+        convert_file_to_markdown(
+            input_path="tmp/pubmed_40055694.html",
+            output_path="tmp/pubmed_40055694.md",
+            element_id="article-details"
+        )
+        """
+        start_time = time.time()
+        try:
+            ext = Path(input_path).suffix.lower()
+            md_converter = MarkItDown()
+            markdown = ""
+            original_format = ""
+            if ext == ".html":
+                if element_id and element_id != "":
+                    from bs4 import BeautifulSoup
+                    with open(input_path, "r", encoding="utf-8") as f:
+                        html = f.read()
+                    soup = BeautifulSoup(html, "html.parser")
+                    target = soup.find(id=element_id)
+                    if target:
+                        html_fragment = str(target)
+                        # Convert only the fragment
+                        import io
+                        stream = io.BytesIO(html_fragment.encode("utf-8"))
+                        markdown = markdownify.markdownify(stream, heading_style="ATX")
+                        original_format = "html"
+                    else:
+                        # Fallback to full file if id not found
+                        error_msg = f"Element with id '{element_id}' not found. Converting full file instead."
+                        result = md_converter.convert_local(input_path)
+                        markdown = result.text_content
+                        original_format = "html"
+                        markdown = f"<!-- {error_msg} -->\n" + markdown
+                else:
+                    result = md_converter.convert_local(input_path)
+                    markdown = result.text_content
+                    original_format = "html"
+            elif ext == ".pdf":
+                result = md_converter.convert_local(input_path)
+                markdown = result.text_content
+                original_format = "pdf"
+            else:
+                return {
+                    "success": False,
+                    "error": f"Unsupported file extension: {ext}",
+                    "status": "error"
+                }
+            # Write markdown to output_path
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(markdown)
+            duration = time.time() - start_time
+            return {
+                "success": True,
+                "status": "ok",
+                "original_format": original_format,
+                "output_path": output_path,
+                "duration_seconds": round(duration, 2)
+            }
+        except Exception as e:
+            duration = time.time() - start_time
+            return {
+                "success": False,
+                "error": str(e),
+                "status": "error",
+                "duration_seconds": round(duration, 2)
+            }
+
     @mcp.tool()
     async def convert_to_markdown(
         content_type: Annotated[str, Field(
@@ -162,6 +271,8 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
                 metadata={"duration_seconds": round(duration, 2)}
             )
 
+    # Call debug print after tool registration
+    _debug_print_tools()
 
 async def _convert_html_content(md_converter: MarkItDown, html_content: str) -> ConvertToMarkdownOutput:
     """Convert HTML string content to markdown."""
@@ -199,7 +310,6 @@ async def _convert_html_content(md_converter: MarkItDown, html_content: str) -> 
             status="error",
             error=f"HTML conversion failed: {str(e)}"
         )
-
 
 async def _convert_url_content(md_converter: MarkItDown, url: str, content_type: str) -> ConvertToMarkdownOutput:
     """Convert URL content (web page or PDF) to markdown."""

@@ -27,6 +27,7 @@ from server.tools import (
     setup_search_tools,
     setup_convert_tools,
     setup_pdf_tools,
+    setup_save_tools,
 )
 
 # Load environment variables
@@ -99,6 +100,7 @@ setup_interact_tools(mcp, get_browser_manager)
 setup_search_tools(mcp, get_browser_manager)
 setup_convert_tools(mcp, get_browser_manager)
 setup_pdf_tools(mcp, get_browser_manager)
+setup_save_tools(mcp)
 
 # Create Starlette app from FastMCP for SSE transport
 app = create_sse_app(

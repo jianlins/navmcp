@@ -37,11 +37,90 @@ class FetchUrlOutput(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
+async def fetch_url(
+    url: str,
+    get_browser_manager: Callable = None
+) -> FetchUrlOutput:
+    """
+    Navigate to a URL and fetch its complete content using a browser.
+
+    This tool uses a real browser (Chrome) to navigate to the specified URL,
+    waits for the page to fully load, and returns comprehensive information
+    including the final URL (after redirects), page title, and complete HTML content.
+
+    Args:
+        url: The complete URL to fetch (must include http:// or https://)
+        get_browser_manager: Optional callable to get browser manager
+
+    Returns:
+        FetchUrlOutput with page content, metadata, and status information
+    """
+    url = url.strip()
+    start_time = time.time()
+
+    logger.info(f"Fetching URL: {url}")
+
+    try:
+        # Validate URL security
+        is_valid, error_msg = validate_url_security(url, allow_private=False)
+        if not is_valid:
+            logger.warning(f"URL validation failed for {url}: {error_msg}")
+            return FetchUrlOutput(
+                final_url=url,
+                title="",
+                html="",
+                status="error",
+                error=f"URL validation failed: {error_msg}"
+            )
+
+        # Normalize URL
+        normalized_url = normalize_url(url)
+
+        # Get browser manager
+        if get_browser_manager is None:
+            from server.app import get_browser_manager as default_browser_manager
+            browser_manager = await default_browser_manager()
+        else:
+            browser_manager = await get_browser_manager()
+        if not browser_manager:
+            return FetchUrlOutput(
+                final_url=url,
+                title="",
+                html="",
+                status="error",
+                error="Browser manager not available"
+            )
+
+        # Perform the fetch with retry logic
+        result = await _fetch_page_with_retry(browser_manager, normalized_url)
+
+        # Add timing metadata
+        duration = time.time() - start_time
+        result.metadata["duration_seconds"] = round(duration, 2)
+        result.metadata["timestamp"] = time.time()
+
+        logger.info(f"Fetch completed for {url} in {duration:.2f}s - Status: {result.status}")
+        return result
+
+    except Exception as e:
+        duration = time.time() - start_time
+        error_msg = str(e)
+        logger.error(f"Unexpected error fetching {url}: {error_msg}")
+
+        return FetchUrlOutput(
+            final_url=url,
+            title="",
+            html="",
+            status="error",
+            error=f"Unexpected error: {error_msg}",
+            metadata={"duration_seconds": round(duration, 2)}
+        )
+
 def setup_fetch_tools(mcp, get_browser_manager: Callable):
     """Setup fetch-related MCP tools."""
-    
+
     @mcp.tool()
-    async def fetch_url(
+    async def fetch_url_tool(
         url: Annotated[str, Field(
             description="The complete URL to fetch and navigate to (must include http:// or https://)",
             examples=["https://www.example.com", "https://www.google.com/search?q=python"],
@@ -49,92 +128,7 @@ def setup_fetch_tools(mcp, get_browser_manager: Callable):
             max_length=2048
         )]
     ) -> FetchUrlOutput:
-        """
-        Navigate to a URL and fetch its complete content using a browser.
-        
-        This tool uses a real browser (Chrome) to navigate to the specified URL,
-        waits for the page to fully load, and returns comprehensive information
-        including the final URL (after redirects), page title, and complete HTML content.
-        
-        Key features:
-        - Handles JavaScript-rendered pages
-        - Follows redirects automatically  
-        - Validates URL security (blocks private/internal networks)
-        - Includes timing and metadata information
-        - Retries on transient failures
-        
-        Use cases:
-        - Fetching dynamic web pages that require JavaScript
-        - Getting the final URL after redirects
-        - Extracting complete page content for analysis
-        - Verifying page accessibility and load times
-        
-        Example usage:
-        - url: "https://www.example.com"
-        - url: "https://httpbin.org/redirect/3"
-        
-        Args:
-            url: The complete URL to fetch (must include http:// or https://)
-            
-        Returns:
-            FetchUrlOutput with page content, metadata, and status information
-        """
-        url = url.strip()
-        start_time = time.time()
-        
-        logger.info(f"Fetching URL: {url}")
-        
-        try:
-            # Validate URL security
-            is_valid, error_msg = validate_url_security(url, allow_private=False)
-            if not is_valid:
-                logger.warning(f"URL validation failed for {url}: {error_msg}")
-                return FetchUrlOutput(
-                    final_url=url,
-                    title="",
-                    html="",
-                    status="error",
-                    error=f"URL validation failed: {error_msg}"
-                )
-            
-            # Normalize URL
-            normalized_url = normalize_url(url)
-            
-            # Get browser manager
-            browser_manager = await get_browser_manager()
-            if not browser_manager:
-                return FetchUrlOutput(
-                    final_url=url,
-                    title="",
-                    html="",
-                    status="error",
-                    error="Browser manager not available"
-                )
-            
-            # Perform the fetch with retry logic
-            result = await _fetch_page_with_retry(browser_manager, normalized_url)
-            
-            # Add timing metadata
-            duration = time.time() - start_time
-            result.metadata["duration_seconds"] = round(duration, 2)
-            result.metadata["timestamp"] = time.time()
-            
-            logger.info(f"Fetch completed for {url} in {duration:.2f}s - Status: {result.status}")
-            return result
-            
-        except Exception as e:
-            duration = time.time() - start_time
-            error_msg = str(e)
-            logger.error(f"Unexpected error fetching {url}: {error_msg}")
-            
-            return FetchUrlOutput(
-                final_url=url,
-                title="",
-                html="",
-                status="error",
-                error=f"Unexpected error: {error_msg}",
-                metadata={"duration_seconds": round(duration, 2)}
-            )
+        return await fetch_url(url, get_browser_manager)
 
 
 @retry(
