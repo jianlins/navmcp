@@ -172,7 +172,7 @@ def setup_parse_tools(mcp, get_browser_manager: Callable):
         
         try:
             # Get browser manager
-            browser_manager = get_browser_manager()
+            browser_manager = await get_browser_manager()
             if not browser_manager:
                 return FindElementsOutput(
                     count=0,

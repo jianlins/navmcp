@@ -101,7 +101,7 @@ def setup_fetch_tools(mcp, get_browser_manager: Callable):
             normalized_url = normalize_url(url)
             
             # Get browser manager
-            browser_manager = get_browser_manager()
+            browser_manager = await get_browser_manager()
             if not browser_manager:
                 return FetchUrlOutput(
                     final_url=url,

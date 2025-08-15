@@ -219,7 +219,7 @@ def setup_interact_tools(mcp, get_browser_manager: Callable):
         
         try:
             # Get browser manager
-            browser_manager = get_browser_manager()
+            browser_manager = await get_browser_manager()
             if not browser_manager:
                 return ClickElementOutput(
                     url="",
@@ -472,7 +472,7 @@ def setup_interact_tools(mcp, get_browser_manager: Callable):
         
         try:
             # Get browser manager
-            browser_manager = get_browser_manager()
+            browser_manager = await get_browser_manager()
             if not browser_manager:
                 return RunJsInteractionOutput(
                     result=None,

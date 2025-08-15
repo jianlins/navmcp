@@ -473,10 +473,6 @@ class TestWebSearchTool:
         assert valid_input.num_results == 5
 
 
-# Integration test markers
-pytestmark = pytest.mark.asyncio
-
-
 class TestSearchIntegration:
     """Integration tests for search functionality."""
     

@@ -193,7 +193,7 @@ def setup_pdf_tools(mcp, get_browser_manager: Callable):
                 )
             
             # Get browser manager
-            browser_manager = get_browser_manager()
+            browser_manager = await get_browser_manager()
             if not browser_manager:
                 return DownloadPdfsOutput(
                     downloaded=[],

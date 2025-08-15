@@ -20,12 +20,14 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from server.browser import BrowserManager
-from server.tools.fetch import setup_fetch_tools
-from server.tools.parse import setup_parse_tools
-from server.tools.interact import setup_interact_tools
-from server.tools.pdf import setup_pdf_tools
-from server.tools.search import setup_search_tools
-from server.tools.convert import setup_convert_tools
+from server.tools import (
+    setup_fetch_tools,
+    setup_parse_tools,
+    setup_interact_tools,
+    setup_search_tools,
+    setup_convert_tools,
+    setup_pdf_tools,
+)
 
 # Load environment variables
 load_dotenv()
@@ -54,16 +56,19 @@ logger.add(
 
 # Initialize browser manager
 browser_manager = None
+_browser_manager_initialized = False
 
 @asynccontextmanager
 async def lifespan(app):
     """Lifespan context manager for startup and shutdown."""
-    global browser_manager
+    global browser_manager, _browser_manager_initialized
     # Startup
     logger.info("Starting MCP Browser Tools server")
-    browser_manager = BrowserManager()
-    await browser_manager.start()
-    logger.info("Browser manager initialized")
+    if not _browser_manager_initialized:
+        browser_manager = BrowserManager()
+        await browser_manager.start()
+        _browser_manager_initialized = True
+        logger.info("Browser manager initialized")
     
     yield
     
@@ -75,13 +80,25 @@ async def lifespan(app):
 # Initialize FastMCP with proper settings
 mcp = FastMCP("mcp-browser", version="1.0.0")
 
+# Helper to ensure browser_manager is initialized
+async def get_browser_manager():
+    global browser_manager, _browser_manager_initialized
+    if browser_manager is None and not _browser_manager_initialized:
+        logger.info("Initializing browser manager for testing context")
+        browser_manager = BrowserManager()
+        await browser_manager.start()
+        _browser_manager_initialized = True
+    elif browser_manager is None:
+        raise RuntimeError("Browser manager is not initialized. Make sure the server is started with the lifespan context.")
+    return browser_manager
+
 # Setup all tools
-setup_fetch_tools(mcp, lambda: browser_manager)
-setup_parse_tools(mcp, lambda: browser_manager)
-setup_interact_tools(mcp, lambda: browser_manager)
-setup_pdf_tools(mcp, lambda: browser_manager)
-setup_search_tools(mcp, lambda: browser_manager)
-setup_convert_tools(mcp, lambda: browser_manager)
+setup_fetch_tools(mcp, get_browser_manager)
+setup_parse_tools(mcp, get_browser_manager)
+setup_interact_tools(mcp, get_browser_manager)
+setup_search_tools(mcp, get_browser_manager)
+setup_convert_tools(mcp, get_browser_manager)
+setup_pdf_tools(mcp, get_browser_manager)
 
 # Create Starlette app from FastMCP for SSE transport
 app = create_sse_app(

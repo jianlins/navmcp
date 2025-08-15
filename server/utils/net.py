@@ -92,7 +92,12 @@ def is_private_ip(hostname: str) -> bool:
     Returns:
         True if hostname appears to be private/local
     """
-    # Check if it's already an IP address
+    hostname_lower = hostname.lower()
+    local_hostnames = {'localhost', '127.0.0.1', '0.0.0.0', '::1'}
+    # If it's a valid domain (contains a dot, not .local, not local hostnames), treat as public
+    if '.' in hostname and hostname_lower not in local_hostnames and not hostname_lower.endswith('.local'):
+        return False
+    # Otherwise, check IP logic
     try:
         ip = ip_address(hostname)
         # Check for private ranges
@@ -101,17 +106,13 @@ def is_private_ip(hostname: str) -> bool:
         # Check specific patterns
         ip_str = str(ip)
         return any(pattern.match(ip_str) for pattern in PRIVATE_IP_PATTERNS)
-    except AddressValueError:
-        # Not an IP address, check if it's a local hostname
-        hostname_lower = hostname.lower()
-        local_hostnames = {'localhost', '127.0.0.1', '0.0.0.0', '::1'}
+    except (AddressValueError, ValueError):
         if hostname_lower in local_hostnames:
             return True
-        
-        # Check for .local domains or single-label hostnames
-        if '.' not in hostname or hostname_lower.endswith('.local'):
+        if hostname_lower.endswith('.local'):
             return True
-        
+        if '.' not in hostname:
+            return True
         return False
 
 
