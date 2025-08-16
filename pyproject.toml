@@ -26,7 +26,7 @@ Homepage = "https://github.com/jianlins/navmcp"
 where = ["navmcp"]
 
 [tool.setuptools.dynamic]
-version = {file = ["navmcp/_version.py"]}
+version = {attr = "navmcp.version.__version__"}
 
 [project.scripts]
 navmcp = "navmcp.__main__:main"
