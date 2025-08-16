@@ -113,20 +113,25 @@ app = create_sse_app(
     sse_path=SSE_PATH
 )
 
-# Middleware to allow chat to continue when MCP server is down
-@app.middleware("http")
-async def mcp_server_availability_middleware(request, call_next):
-    # Only block MCP tool requests if server is down
-    # Remove invalid is_running check; always allow requests to continue
-    return await call_next(request)
+
+# Custom ASGI middleware to allow chat to continue when MCP server is down
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class MCPServerAvailabilityMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        # Only block MCP tool requests if server is down
+        # Remove invalid is_running check; always allow requests to continue
+        return await call_next(request)
 
 
 # ...existing code...
 
+
 # Set the lifespan on the app
 app.router.lifespan_context = lifespan
 
-# Add CORS middleware
+# Add custom and CORS middleware
+app.add_middleware(MCPServerAvailabilityMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,

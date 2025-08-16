@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: navmcp
-Version: 0.1.1
+Version: 0.1.2
 Summary: A browser automation server with FastAPI and MCP tools.
 Author-email: jianlins <your@email.com>
 License-Expression: MIT

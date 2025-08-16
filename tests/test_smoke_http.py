@@ -44,9 +44,7 @@ class TestMCPServer:
     async def test_mcp_tools_list(self):
         """Test MCP tools/list using fastmcp Client."""
         async with Client(mcp) as client:
-            # List tools
             tools = await client.list_tools()
-            
             # Check that we have the expected tools
             expected_tools = {
                 "fetch_url",
@@ -56,16 +54,13 @@ class TestMCPServer:
                 "download_pdfs",
                 "web_search"
             }
-            
             tool_names = {tool.name for tool in tools}
             assert expected_tools.issubset(tool_names), f"Missing tools: {expected_tools - tool_names}"
-            
             # Check tool structure
             for tool in tools:
                 assert hasattr(tool, "name")
                 assert hasattr(tool, "description")
                 assert hasattr(tool, "inputSchema")
-                
                 # Validate input schema
                 schema = tool.inputSchema
                 assert "type" in schema

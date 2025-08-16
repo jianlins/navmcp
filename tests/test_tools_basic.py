@@ -19,11 +19,6 @@ except ImportError:
     ToolError = Exception
     mcp = None
 
-# Skip these tests if browser tests are disabled
-pytestmark = pytest.mark.skipif(
-    __import__('os').getenv('SKIP_BROWSER_TESTS') == '1',
-    reason="Browser tests disabled via SKIP_BROWSER_TESTS=1"
-)
 
 
 class TestFetchTool:
