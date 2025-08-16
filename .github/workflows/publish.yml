@@ -31,10 +31,10 @@ jobs:
           
       - name: Fetch all tags
         run: git fetch --tags
-      - name: Read version from _version.py
+      - name: Read version from version.py
         id: get_version
         run: |
-          VERSION=$(python -c "import navmcp._version; print(navmcp._version.__version__)")
+          VERSION=$(python -c "import navmcp.version; print(navmcp.version.__version__)")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Check if tag exists and bump version if needed
         id: check_tag
@@ -47,10 +47,10 @@ jobs:
             PATCH=$((PATCH+1))
             NEW_VERSION="$MAJOR.$MINOR.$PATCH"
             echo "Bumping version to $NEW_VERSION"
-            echo "__version__ = \"$NEW_VERSION\"" > navmcp/_version.py
+            echo "__version__ = \"$NEW_VERSION\"" > navmcp/version.py
             git config user.name "github-actions"
             git config user.email "github-actions@github.com"
-            git add navmcp/_version.py
+            git add navmcp/version.py
             git commit -m "Bump version to $NEW_VERSION"
             git push origin HEAD:${GITHUB_REF}
             echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
