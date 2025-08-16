@@ -1,0 +1,2 @@
+[console_scripts]
+navmcp = navmcp.__main__:main
