@@ -73,6 +73,10 @@ jobs:
           pip install build twine
       - name: Build package
         run: python -m build
+
+      - name: List dist directory contents
+        run: ls -l dist || echo "dist directory not found"
+        
       - name: Publish to PyPI (trusted publisher)
         if: ${{ github.event.inputs.publish_to_pypi == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
