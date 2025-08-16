@@ -44,6 +44,8 @@ jobs:
             sleep 1
           done
           echo "Server health check failed after 20 seconds"
+          echo "==== server.log ===="
+          cat server.log
           exit 1
 
       - name: Run pytest
