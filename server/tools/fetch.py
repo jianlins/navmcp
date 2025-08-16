@@ -186,7 +186,66 @@ async def _fetch_page_with_retry(browser_manager, url: str) -> FetchUrlOutput:
             "title_length": len(title),
             "html_length": len(html),
         }
-        
+
+        # Bot protection detection
+        bot_protection_signatures = [
+            "Just a moment...",
+            "Verifying you are human",
+            "Cloudflare",
+            "cloudflare",
+            "needs to review the security of your connection"
+        ]
+        if any(sig in html for sig in bot_protection_signatures):
+            # Switch to non-headless mode and restart browser for manual intervention
+            await browser_manager.set_headless(False)
+            # Re-fetch the page in headed mode
+            driver = await browser_manager.get_driver()
+            driver.get(url)
+            await _wait_for_page_load(driver)
+            # Wait for user to manually click and page to refresh
+            logger.info("Waiting up to 60 seconds for manual user interaction and page refresh...")
+            max_wait = 60
+            check_interval = 5
+            for i in range(0, max_wait, check_interval):
+                await asyncio.sleep(check_interval)
+                html = driver.page_source or ""
+                # If bot protection keywords are gone, break
+                if not any(sig in html for sig in bot_protection_signatures):
+                    logger.info("Bot protection passed, real content loaded.")
+                    break
+                else:
+                    logger.info(f"Bot protection still detected after {i+check_interval}s.")
+            # Optionally, check for main article content loaded
+            try:
+                article_loaded = driver.execute_script(
+                    "return !!document.querySelector('article, .article-content, #article-details');"
+                )
+                if not article_loaded:
+                    logger.warning("Main article content not detected after manual click.")
+            except Exception as e:
+                logger.warning(f"Error checking for article content: {e}")
+            title = driver.title or ""
+            final_url = driver.current_url
+            metadata["manual_intervention"] = True
+            # If bot protection keywords are still present, return manual intervention required
+            if any(sig in html for sig in bot_protection_signatures):
+                return FetchUrlOutput(
+                    final_url=final_url,
+                    title=title,
+                    html=html,
+                    status="manual_intervention_required",
+                    error="Bot protection detected. Browser opened in non-headless mode for manual intervention.",
+                    metadata=metadata
+                )
+            # Otherwise, return success
+            return FetchUrlOutput(
+                final_url=final_url,
+                title=title,
+                html=html,
+                status="ok",
+                metadata=metadata
+            )
+
         return FetchUrlOutput(
             final_url=final_url,
             title=title,
@@ -207,9 +266,51 @@ async def _fetch_page_with_retry(browser_manager, url: str) -> FetchUrlOutput:
         
     except WebDriverException as e:
         logger.warning(f"WebDriver error for {url}: {e}")
-        
-        # Check if it's a recoverable error
         error_msg = str(e).lower()
+        # Retry with new session if invalid session id
+        if "invalid session id" in error_msg:
+            logger.info("Detected invalid session id, restarting browser and retrying fetch once.")
+            await browser_manager.restart_driver()
+            try:
+                driver = await browser_manager.get_driver()
+                driver.get(url)
+                await _wait_for_page_load(driver)
+                final_url = driver.current_url
+                title = ""
+                try:
+                    title = driver.title or ""
+                    title = clean_text_content(title)
+                except Exception as e2:
+                    logger.warning(f"Could not get page title after restart: {e2}")
+                html = ""
+                try:
+                    html = driver.page_source or ""
+                except Exception as e2:
+                    logger.warning(f"Could not get page source after restart: {e2}")
+                    html = ""
+                metadata = {
+                    "redirected": final_url != url,
+                    "title_length": len(title),
+                    "html_length": len(html),
+                    "restarted_session": True,
+                }
+                return FetchUrlOutput(
+                    final_url=final_url,
+                    title=title,
+                    html=html,
+                    status="ok",
+                    metadata=metadata
+                )
+            except Exception as e2:
+                logger.error(f"Failed to recover from invalid session id: {e2}")
+                return FetchUrlOutput(
+                    final_url=url,
+                    title="",
+                    html="",
+                    status="error",
+                    error=f"Browser error after restart: {str(e2)}"
+                )
+        # Check if it's a recoverable error
         if any(keyword in error_msg for keyword in ['net::', 'dns', 'connection', 'timeout']):
             # Network-related error, might be worth retrying
             raise
@@ -223,30 +324,32 @@ async def _fetch_page_with_retry(browser_manager, url: str) -> FetchUrlOutput:
         )
 
 
-async def _wait_for_page_load(driver, max_wait: int = 30) -> None:
+async def _wait_for_page_load(driver, max_wait: int = 30, extra_wait: float = 3.0) -> None:
     """
-    Wait for page to load completely using JavaScript ready state.
-    
+    Wait for page to load completely using document.readyState, then wait extra seconds.
     Args:
         driver: Selenium WebDriver instance
-        max_wait: Maximum seconds to wait
+        max_wait: Maximum seconds to wait for document.readyState == "complete"
+        extra_wait: Additional seconds to wait after readyState is "complete" (default 3.0)
     """
     end_time = time.time() + max_wait
-    
+    ready = False
     while time.time() < end_time:
         try:
-            # Check if document ready state is complete
             ready_state = driver.execute_script("return document.readyState")
             if ready_state == "complete":
-                # Give a small additional wait for dynamic content
-                await asyncio.sleep(0.5)
-                return
+                ready = True
+                logger.debug("document.readyState is complete.")
+                break
         except Exception as e:
             logger.debug(f"Error checking ready state: {e}")
-        
         await asyncio.sleep(0.1)
-    
-    logger.warning(f"Page load wait timeout ({max_wait}s)")
+    if not ready:
+        logger.warning(f"Page load wait timeout ({max_wait}s)")
+        return
+    # Extra wait for dynamic content
+    logger.debug(f"Waiting extra {extra_wait} seconds for dynamic content.")
+    await asyncio.sleep(extra_wait)
 
 
 # Additional helper for debugging

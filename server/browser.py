@@ -51,6 +51,13 @@ class BrowserManager:
         self.download_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"Browser config: headless={self.headless}, download_dir={self.download_dir}")
+
+    async def set_headless(self, headless: bool):
+        """Set headless mode and restart driver if needed."""
+        if self.headless != headless:
+            self.headless = headless
+            await self.restart_driver()
+            logger.info(f"Headless mode set to {self.headless} and browser restarted")
     
     def _create_chrome_options(self) -> Options:
         """Create Chrome options with download and security settings."""
@@ -65,12 +72,14 @@ class BrowserManager:
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-extensions")
+        options.add_argument("--enable-unsafe-swiftshader")
         options.add_argument("--disable-plugins")
         options.add_argument("--disable-images")
-        options.add_argument("--disable-javascript")  # Will be re-enabled per tool as needed
+        # options.add_argument("--disable-javascript")  # Will be re-enabled per tool as needed
         
-        # Set custom user agent
-        options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 MCP-Browser/1.0")
+        # Set genuine user agent
+        # Latest Chrome user-agent string for Windows 10 (April 2025)
+        options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
         
         # Download preferences
         download_prefs = {
@@ -154,9 +163,16 @@ class BrowserManager:
                     self.driver = None
     
     async def get_driver(self) -> webdriver.Chrome:
-        """Get the WebDriver instance, creating it if necessary."""
+        """Get the WebDriver instance, creating it if necessary. If the driver is invalid, restart it."""
         if not self.driver:
             await self.start()
+        else:
+            # Check if driver is alive by accessing a property
+            try:
+                _ = self.driver.current_url
+            except WebDriverException as e:
+                logger.warning(f"WebDriver appears invalid: {e}. Restarting driver.")
+                await self.restart_driver()
         return self.driver
     
     async def restart_driver(self) -> None:
