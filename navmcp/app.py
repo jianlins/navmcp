@@ -21,8 +21,8 @@ from fastmcp.server.http import create_sse_app
 from loguru import logger
 from dotenv import load_dotenv
 
-from server.browser import BrowserManager
-from server.tools import (
+from navmcp.browser import BrowserManager
+from navmcp.tools import (
     setup_fetch_tools,
     setup_parse_tools,
     setup_interact_tools,

@@ -19,7 +19,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from server.tools.search import (
+from navmcp.tools.search import (
     WebSearchInput, WebSearchOutput, SearchResult,
     _search_google_scholar, _search_pubmed, _search_ieee,
     _search_arxiv, _search_medrxiv, _search_biorxiv,
@@ -32,7 +32,7 @@ from server.tools.search import (
     _wait_for_search_results, _get_search_page_info,
     setup_search_tools
 )
-from server.browser import BrowserManager
+from navmcp.browser import BrowserManager
 
 
 # Server configuration
@@ -67,10 +67,10 @@ def prompt_user_to_start_server():
     print("="*60)
     print(f"The MCP server is not running on {SERVER_URL}")
     print("\nTo start the server, run one of these commands:")
-    print(f"  py -m fastmcp http server.app:app --host {MCP_HOST} --port {MCP_PORT}")
-    print(f"  uvicorn server.app:app --host {MCP_HOST} --port {MCP_PORT}")
+    print(f"  py -m fastmcp http navmcp.app:app --host {MCP_HOST} --port {MCP_PORT}")
+    print(f"  uvicorn navmcp.app:app --host {MCP_HOST} --port {MCP_PORT}")
     print("\nOr run from the project directory:")
-    print("  python -m server")
+    print("  python -m navmcp")
     print("\nWaiting for server to start...")
     print("="*60)
     

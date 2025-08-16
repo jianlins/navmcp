@@ -10,7 +10,7 @@ import asyncio
 from typing import Dict, Any
 
 from fastmcp import Client
-from server.app import mcp
+from navmcp.app import mcp
 
 # Skip these tests if browser tests are disabled
 pytestmark = pytest.mark.skipif(

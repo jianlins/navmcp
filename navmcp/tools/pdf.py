@@ -16,11 +16,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from loguru import logger
 
-from server.utils.net import validate_url_security, normalize_url, get_base_url
-from server.utils.parsing import (
+from navmcp.utils.net import validate_url_security, normalize_url, get_base_url
+from navmcp.utils.parsing import (
     normalize_selector, detect_selector_type, extract_links, parse_html_with_soup
 )
-from server.utils.io import (
+from navmcp.utils.io import (
     sanitize_filename, filename_from_url, get_unique_filename, is_pdf_file,
     get_file_size, ensure_directory
 )

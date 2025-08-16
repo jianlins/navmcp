@@ -16,7 +16,7 @@ from loguru import logger
 from markitdown import MarkItDown
 import markdownify
 
-from server.utils.net import validate_url_security, normalize_url
+from navmcp.utils.net import validate_url_security, normalize_url
 
 class ConvertToMarkdownInput(BaseModel):
     """Input schema for convert_to_markdown tool."""

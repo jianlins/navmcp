@@ -63,7 +63,7 @@ def start_server(host: str, port: int, reload: bool = False, log_level: str = "i
     
     try:
         uvicorn.run(
-            "server.app:app",
+            "navmcp.app:app",
             host=host,
             port=port,
             reload=reload,

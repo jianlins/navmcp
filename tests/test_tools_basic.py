@@ -12,7 +12,7 @@ from typing import Dict, Any
 try:
     from fastmcp import Client, FastMCP
     from fastmcp.exceptions import ToolError
-    from server.app import mcp
+    from navmcp.app import mcp
 except ImportError:
     Client = None
     FastMCP = None

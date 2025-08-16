@@ -14,7 +14,7 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from loguru import logger
 
-from server.utils.parsing import (
+from navmcp.utils.parsing import (
     parse_html_with_soup, extract_element_text, clean_text_content, truncate_text
 )
 

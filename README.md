@@ -31,13 +31,9 @@ A Model Context Protocol (MCP) server that provides browser automation tools ove
 
 ### Installation
 
-1. **Clone and setup environment:**
+1. **Install from PyPI:**
 ```powershell
-git clone <repository-url>
-cd mcp-browser
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install navmcp
 ```
 
 2. **Configure environment (optional):**
@@ -48,7 +44,7 @@ copy .env.example .env
 
 3. **Start the server:**
 ```powershell
-python -m server.app
+python -m navmcp start
 ```
 
 4. **Verify it's running:**
@@ -63,10 +59,10 @@ curl http://127.0.0.1:3333/sse
 ### Alternative Start Methods
 ```powershell
 # Using fastmcp SSE directly (if your fastmcp version supports it)
-py -m fastmcp sse server.app:app --host 127.0.0.1 --port 3333
+py -m fastmcp sse mbrowser.app:app --host 127.0.0.1 --port 3333
 
 # Using the __main__ module
-python -m server
+python -m mbrowser
 ```
 
 ## Client Configuration

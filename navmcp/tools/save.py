@@ -30,7 +30,7 @@ class SaveFileOutput(BaseModel):
 def setup_save_tools(mcp):
     """Setup save-related MCP tools."""
 
-    from server.tools.fetch import fetch_url
+    from navmcp.tools.fetch import fetch_url
 
     @mcp.tool()
     async def save_file(

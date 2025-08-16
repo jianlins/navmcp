@@ -19,8 +19,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from loguru import logger
 
-from server.utils.net import validate_url_security, normalize_url
-from server.utils.parsing import (
+from navmcp.utils.net import validate_url_security, normalize_url
+from navmcp.utils.parsing import (
     normalize_selector, detect_selector_type, extract_element_text,
     get_element_outer_html
 )

@@ -13,8 +13,8 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from server.utils.net import validate_url_security, normalize_url
-from server.utils.parsing import clean_text_content, truncate_text
+from navmcp.utils.net import validate_url_security, normalize_url
+from navmcp.utils.parsing import clean_text_content, truncate_text
 
 
 class FetchUrlInput(BaseModel):
@@ -78,7 +78,7 @@ async def fetch_url(
 
         # Get browser manager
         if get_browser_manager is None:
-            from server.app import get_browser_manager as default_browser_manager
+            from navmcp.app import get_browser_manager as default_browser_manager
             browser_manager = await default_browser_manager()
         else:
             browser_manager = await get_browser_manager()
