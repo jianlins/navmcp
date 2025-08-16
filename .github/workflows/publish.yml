@@ -17,10 +17,11 @@ on:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     environment:
       name: pypi
       url: https://pypi.org/p/navmcp
-      PYTHONPATH: ${{ github.workspace }}
     permissions:
       id-token: write
       contents: write
