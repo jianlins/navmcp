@@ -64,12 +64,14 @@ jobs:
           pip install build twine
       - name: Build package
         run: python -m build
-      - name: Publish to PyPI (optional)
+      - name: Publish to PyPI (trusted publisher)
         if: ${{ github.event.inputs.publish_to_pypi == 'true' }}
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # with:
+          # No username/password/token needed!
+          # Optionally specify repository-url for TestPyPI
+          # repository-url: https://test.pypi.org/legacy/
+
       - name: Create GitHub Release (optional)
         if: ${{ github.event.inputs.create_release == 'true' }}
         id: create_release
