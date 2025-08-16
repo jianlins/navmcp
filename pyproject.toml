@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "navmcp"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A browser automation server with FastAPI and MCP tools.\n\nnavmcp provides a robust, extensible platform for browser automation and web interaction, built on FastAPI for high-performance HTTP APIs. Key features include:\n\n- Automated browser control using Selenium for testing, scraping, and automation tasks.\n- FastAPI-powered RESTful endpoints for controlling browser sessions, fetching web content, and interacting with web pages.\n- Utility modules for parsing, saving, and converting web data (HTML, Markdown, PDF, etc).\n- Tools for advanced search, PDF generation, and web content extraction.\n- Asynchronous networking and HTTP client support via HTTPX.\n- Modular design for easy extension and integration with other MCP tools.\n\nThe project is ideal for researchers, developers, and QA engineers who need a programmable browser automation server with modern Python tooling.\n\nLicense: MIT.\n\nThird-party packages used and their licenses:\n- FastAPI: MIT License\n- Uvicorn: BSD 3-Clause License\n- Selenium: Apache License 2.0\n- HTTPX: BSD 3-Clause License\n\nPlease see the LICENSE file and referenced package documentation for details."
 license = "MIT"
 authors = [
@@ -24,6 +24,9 @@ Homepage = "https://github.com/jianlins/navmcp"
 
 [tool.setuptools.packages.find]
 where = ["navmcp"]
+
+[tool.setuptools.dynamic]
+version = {file = "navmcp/_version.py", attr = "__version__"}
 
 [project.scripts]
 navmcp = "navmcp.__main__:main"
