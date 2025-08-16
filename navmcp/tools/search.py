@@ -964,11 +964,10 @@ def _extract_pubmed_result(element) -> Optional[SearchResult]:
         # Extract title
         title = ""
         title_selectors = [
-            '.docsum-title a',
+            'a.docsum-title',
             'h1 a',
             '.title a'
         ]
-        
         for selector in title_selectors:
             title_element = element.select_one(selector)
             if title_element:
@@ -998,13 +997,16 @@ def _extract_pubmed_result(element) -> Optional[SearchResult]:
         # Extract snippet (abstract)
         snippet = ""
         snippet_selectors = [
+            '.docsum-snippet .full-view-snippet',
+            '.docsum-snippet .short-view-snippet',
             '.full-view-snippet',
             '.docsum-snippet',
             '.abstract'
         ]
-        
         for selector in snippet_selectors:
             snippet_element = element.select_one(selector)
+            if not snippet_element:
+                snippet_element = element.select_one('.docsum-snippet')
             if snippet_element:
                 snippet = extract_element_text(snippet_element)
                 break

@@ -7,6 +7,7 @@ Command-line interface for starting the MCP Browser Tools server.
 import argparse
 import asyncio
 import sys
+import os
 from pathlib import Path
 
 try:
@@ -48,19 +49,38 @@ def create_parser() -> argparse.ArgumentParser:
         default="info",
         help="Log level (default: info)"
     )
+    headless_group = start_parser.add_mutually_exclusive_group()
+    headless_group.add_argument(
+        "--headless",
+        dest="headless",
+        action="store_true",
+        default=None,
+        help="Run browser in headless mode (default: true)"
+    )
+    headless_group.add_argument(
+        "--no-headless",
+        dest="headless",
+        action="store_false",
+        default=None,
+        help="Run browser with GUI (not headless)"
+    )
     
     return parser
 
 
-def start_server(host: str, port: int, reload: bool = False, log_level: str = "info") -> None:
+def start_server(host: str, port: int, reload: bool = False, log_level: str = "info", headless: bool = None) -> None:
     """Start the MCP server using uvicorn."""
     print(f"Starting MCP Browser Tools Server...")
     print(f"Host: {host}")
     print(f"Port: {port}")
     print(f"Reload: {reload}")
     print(f"Log level: {log_level}")
+    print(f"Headless: {headless}")
     print()
-    
+
+    # Headless mode is now only controlled by command parameters, not environment variable
+    # (removed BROWSER_HEADLESS logic)
+
     try:
         uvicorn.run(
             "navmcp.app:app",
@@ -91,7 +111,8 @@ def main():
             host=args.host,
             port=args.port,
             reload=args.reload,
-            log_level=args.log_level
+            log_level=args.log_level,
+            headless=args.headless
         )
     else:
         print(f"Unknown command: {args.command}")

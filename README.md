@@ -59,6 +59,20 @@ copy .env.example .env
 python -m navmcp start
 ```
 
+#### Headless/GUI Mode
+
+To run the browser in headless mode (default):
+```powershell
+python -m navmcp start --headless
+```
+
+To run the browser with GUI (not headless):
+```powershell
+python -m navmcp start --no-headless
+```
+
+> **Note:** Headless mode is now only controlled by command parameters (`--headless` or `--no-headless`). The `BROWSER_HEADLESS` environment variable is no longer used.
+
 4. **Verify it's running:**
 ```powershell
 # Health check
@@ -101,13 +115,14 @@ Most options can also be set as environment variables in your shell.
 # Example .env file or environment variables:
 MCP_PORT=3333
 MCP_HOST=127.0.0.1
-BROWSER_HEADLESS=true
 DOWNLOAD_DIR=.data\downloads
 PAGE_LOAD_TIMEOUT_S=30
 SCRIPT_TIMEOUT_S=30
 MCP_ALLOWED_HOSTS=
 MCP_CORS_ORIGINS=http://127.0.0.1,http://localhost
 ```
+
+> **Note:** The `BROWSER_HEADLESS` environment variable is deprecated and no longer used. Use command-line parameters to control headless mode.
 
 For advanced usage, check whether your server start command supports passing these options as command-line arguments.
 

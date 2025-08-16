@@ -42,7 +42,8 @@ class BrowserManager:
         self._lock = asyncio.Lock()
         
         # Configuration from environment
-        self.headless = os.getenv("BROWSER_HEADLESS", "true").lower() == "true"
+        # Headless mode is now only controlled by command parameters, not environment variable
+        self.headless = True
         self.download_dir = Path(os.getenv("DOWNLOAD_DIR", ".data/downloads")).resolve()
         self.page_load_timeout = int(os.getenv("PAGE_LOAD_TIMEOUT_S", "30"))
         self.script_timeout = int(os.getenv("SCRIPT_TIMEOUT_S", "30"))

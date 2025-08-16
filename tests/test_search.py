@@ -476,25 +476,42 @@ class TestWebSearchTool:
 class TestSearchIntegration:
     """Integration tests for search functionality."""
     
-    @pytest.mark.skipif(
-        pytest.importorskip("os").getenv("SKIP_BROWSER_TESTS", "1") == "1",
-        reason="Browser tests skipped (set SKIP_BROWSER_TESTS=0 to enable)"
-    )
+
     @pytest.mark.asyncio
-    async def test_google_scholar_integration(self):
+    async def test_google_scholar_integration(self, browser_manager):
         """Integration test for Google Scholar search."""
-        # This test would require a real browser manager
-        # Skip by default to avoid external dependencies
-        pytest.skip("Integration test - requires real browser")
+        results = await _search_google_scholar(
+            browser_manager,
+            "machine learning",
+            20
+        )
+        assert isinstance(results, list)
+        assert len(results) > 0
+        for result in results:
+            print(result)
+            assert hasattr(result, "title")
+            assert hasattr(result, "url")
+            assert hasattr(result, "snippet")
+            assert len(result.title) > 0
+            assert result.url.startswith("http")
     
-    @pytest.mark.skipif(
-        pytest.importorskip("os").getenv("SKIP_BROWSER_TESTS", "1") == "1",
-        reason="Browser tests skipped (set SKIP_BROWSER_TESTS=0 to enable)"
-    )
+
     @pytest.mark.asyncio
-    async def test_pubmed_integration(self):
+    async def test_pubmed_integration(self, browser_manager):
         """Integration test for PubMed search."""
-        pytest.skip("Integration test - requires real browser")
+        results = await _search_pubmed(
+            browser_manager,
+            "artificial intelligence drug abuse",
+            20
+        )
+        assert isinstance(results, list)
+        assert len(results) > 0
+        for result in results:
+            assert hasattr(result, "title")
+            assert hasattr(result, "url")
+            assert hasattr(result, "snippet")
+            assert len(result.title) > 0
+            assert result.url.startswith("http")
 
 
 if __name__ == "__main__":
