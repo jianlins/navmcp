@@ -18,7 +18,7 @@ except ImportError:
 def create_parser() -> argparse.ArgumentParser:
     """Create command line argument parser."""
     parser = argparse.ArgumentParser(
-        prog="mcp-browser",
+    prog="navmcp",
         description="MCP Browser Tools Server - Browser automation tools for MCP clients"
     )
     

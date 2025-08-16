@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jianlins/mcp-browser"
+Homepage = "https://github.com/jianlins/navmcp"
 
 [tool.setuptools.packages.find]
 where = ["navmcp"]

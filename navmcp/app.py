@@ -83,7 +83,7 @@ async def lifespan(app):
         logger.info("Browser manager stopped")
 
 # Initialize FastMCP with proper settings
-mcp = FastMCP("mcp-browser", version="1.0.0")
+mcp = FastMCP("navmcp", version="1.0.0")
 
 # Helper to ensure browser_manager is initialized
 async def get_browser_manager():
@@ -139,7 +139,7 @@ app.add_middleware(
 async def health_check(request):
     """Health check endpoint for monitoring."""
     return JSONResponse(
-        content={"status": "ok", "server": "mcp-browser", "version": "1.0.0"},
+    content={"status": "ok", "server": "navmcp", "version": "1.0.0"},
         status_code=200
     )
 

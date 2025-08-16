@@ -52,7 +52,7 @@ def check_mcp_server_running() -> bool:
         response = requests.get(f"{SERVER_URL}/health", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            return data.get("status") == "ok" and data.get("server") == "mcp-browser"
+            return data.get("status") == "ok" and data.get("server") == "navmcp"
         return False
     except (requests.RequestException, Exception):
         return False

@@ -32,7 +32,7 @@ class TestMCPServer:
             # Check server info
             assert hasattr(result, "serverInfo")
             server_info = result.serverInfo
-            assert server_info.name == "mcp-browser"
+            assert server_info.name == "navmcp"
             assert hasattr(server_info, "version")
             
             # Check capabilities
@@ -130,8 +130,8 @@ async def test_server_initialization():
     """Standalone test for server initialization."""
     async with Client(mcp) as client:
         result = client.initialize_result
-        assert result.serverInfo.name == "mcp-browser"
-        print(f"Server initialized successfully: {result.serverInfo.name} v{result.serverInfo.version}")
+    assert result.serverInfo.name == "navmcp"
+    print(f"Server initialized successfully: {result.serverInfo.name} v{result.serverInfo.version}")
 
 
 if __name__ == "__main__":
