@@ -34,6 +34,7 @@ jobs:
       - name: Read version from version.py
         id: get_version
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           VERSION=$(python -c "import navmcp.version; print(navmcp.version.__version__)")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Check if tag exists and bump version if needed
