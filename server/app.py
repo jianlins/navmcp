@@ -5,6 +5,8 @@ A FastMCP server that provides browser automation tools over SSE.
 Uses Selenium for browser automation and exposes MCP-compliant tools.
 """
 
+import sys
+import threading
 import os
 import asyncio
 from typing import Dict, Any
@@ -28,10 +30,12 @@ from server.tools import (
     setup_convert_tools,
     setup_pdf_tools,
     setup_save_tools,
+    setup_control_tools,
 )
 
 # Load environment variables
 load_dotenv()
+# --- Server shutdown endpoint ---
 
 # Configuration
 MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")
@@ -93,7 +97,6 @@ async def get_browser_manager():
         raise RuntimeError("Browser manager is not initialized. Make sure the server is started with the lifespan context.")
     return browser_manager
 
-# Setup all tools
 setup_fetch_tools(mcp, get_browser_manager)
 setup_parse_tools(mcp, get_browser_manager)
 setup_interact_tools(mcp, get_browser_manager)
@@ -101,6 +104,7 @@ setup_search_tools(mcp, get_browser_manager)
 setup_convert_tools(mcp, get_browser_manager)
 setup_pdf_tools(mcp, get_browser_manager)
 setup_save_tools(mcp)
+setup_control_tools(mcp)
 
 # Create Starlette app from FastMCP for SSE transport
 app = create_sse_app(
@@ -108,6 +112,16 @@ app = create_sse_app(
     message_path=MESSAGE_PATH, 
     sse_path=SSE_PATH
 )
+
+# Middleware to allow chat to continue when MCP server is down
+@app.middleware("http")
+async def mcp_server_availability_middleware(request, call_next):
+    # Only block MCP tool requests if server is down
+    # Remove invalid is_running check; always allow requests to continue
+    return await call_next(request)
+
+
+# ...existing code...
 
 # Set the lifespan on the app
 app.router.lifespan_context = lifespan
@@ -132,6 +146,28 @@ async def health_check(request):
 # Add health route to Starlette app
 app.add_route("/health", health_check, methods=["GET"])
 
+
+# --- MCP tools: browser control ---
+@mcp.tool()
+async def start_browser() -> Dict[str, Any]:
+    """Start the browser (if not already running)."""
+    bm = await get_browser_manager()
+    await bm.start()
+    return {"status": "started"}
+
+@mcp.tool()
+async def stop_browser() -> Dict[str, Any]:
+    """Stop the browser."""
+    bm = await get_browser_manager()
+    await bm.stop()
+    return {"status": "stopped"}
+
+@mcp.tool()
+async def restart_browser() -> Dict[str, Any]:
+    """Restart the browser."""
+    bm = await get_browser_manager()
+    await bm.restart_driver()
+    return {"status": "restarted"}
 if __name__ == "__main__":
     import asyncio
     asyncio.run(mcp.run_http_async(host=MCP_HOST, port=MCP_PORT))

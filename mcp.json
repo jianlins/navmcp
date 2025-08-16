@@ -1,0 +1,93 @@
+{
+  "server": {
+    "name": "mcp-browser",
+    "version": "1.0.0",
+    "startup": {
+      "cli": "python -m server --host 127.0.0.1 --port 3333",
+      "description": "Start the MCP server using this CLI command. Cannot be started via HTTP."
+    },
+    "tools": [
+      {
+        "name": "shutdown_server",
+        "description": "Gracefully shut down the MCP server process. Should only be called when all clients are finished.",
+        "endpoint": "tool:shutdown_server",
+        "method": "MCP"
+      },
+        {
+          "name": "start_browser",
+          "endpoint": "tool:start_browser",
+          "description": "Start the Selenium browser session (if not already running)."
+        },
+        {
+          "name": "stop_browser",
+          "endpoint": "tool:stop_browser",
+          "description": "Stop the Selenium browser session (not the server)."
+        },
+        {
+          "name": "restart_browser",
+          "endpoint": "tool:restart_browser",
+          "description": "Restart the Selenium browser session (not the server)."
+        },
+        {
+          "name": "fetch_url",
+          "endpoint": "/tools/fetch_url",
+          "description": "Fetch content from a URL using a real browser."
+        },
+        {
+          "name": "find_elements",
+          "endpoint": "/tools/find_elements",
+          "description": "Find and extract information from elements on a web page."
+        },
+        {
+          "name": "click_element",
+          "endpoint": "/tools/click_element",
+          "description": "Click an element on a web page using CSS selector or XPath."
+        },
+        {
+          "name": "run_js_interaction",
+          "endpoint": "/tools/run_js_interaction",
+          "description": "Execute custom JavaScript code in the browser context."
+        },
+        {
+          "name": "web_search",
+          "endpoint": "/tools/web_search",
+          "description": "Perform general web searches using Google (default) or Bing (if specified)."
+        },
+        {
+          "name": "paper_search",
+          "endpoint": "/tools/paper_search",
+          "description": "Perform literature searches using academic engines (Google Scholar, PubMed, IEEE, arXiv, medRxiv, bioRxiv)."
+        },
+        {
+          "name": "convert_to_markdown",
+          "endpoint": "/tools/convert_to_markdown",
+          "description": "Convert PDF or HTML content to markdown format."
+        },
+        {
+          "name": "convert_file_to_markdown",
+          "endpoint": "/tools/convert_file_to_markdown",
+          "description": "Convert a local HTML or PDF file to markdown and write to output."
+        },
+        {
+          "name": "download_pdfs",
+          "endpoint": "/tools/download_pdfs",
+          "description": "Download PDF files from web pages using multiple strategies."
+        }
+        ,
+        {
+          "name": "save_file",
+          "endpoint": "/tools/save_file",
+          "description": "Save raw content to a file at the specified path."
+        },
+        {
+          "name": "fetch_and_save_url",
+          "endpoint": "/tools/fetch_and_save_url",
+          "description": "Fetch content from a URL and save it directly to a file." 
+        }
+      ],
+      "sse": {
+        "endpoint": "/sse",
+        "description": "Subscribe to server-sent events for real-time updates."
+      }
+    }
+  }

@@ -1,7 +1,7 @@
 """
 Search tools for MCP Browser Tools
 
-Provides the web_search tool for performing web searches.
+Provides the paper_search tool for performing literature searches.
 """
 
 import time
@@ -67,59 +67,50 @@ class WebSearchOutput(BaseModel):
 
 def setup_search_tools(mcp, get_browser_manager: Callable):
     """Setup search-related MCP tools."""
-    
-    @mcp.tool()
-    async def web_search(input_data: WebSearchInput) -> WebSearchOutput:
+
+    @mcp.tool(
+        name="web_search"
+    )
+    async def web_search(
+        query: Annotated[str, Field(
+            description="Search query string to find relevant web pages",
+            examples=[
+                "Python web scraping tutorial",
+                "machine learning best practices",
+                "JavaScript async await examples",
+                "React component lifecycle",
+                "how to install Docker"
+            ],
+            min_length=1,
+            max_length=512
+        )],
+        engine: Annotated[str, Field(
+            default="google",
+            description="Search engine to use for the web search (google or bing)",
+            examples=["google", "bing"],
+            pattern="^(google|bing)$"
+        )] = "google",
+        num_results: Annotated[int, Field(
+            default=10,
+            description="Maximum number of search results to return (capped at 20 for performance)",
+            ge=1,
+            le=20,
+            examples=[5, 10, 15, 20]
+        )] = 10
+    ) -> WebSearchOutput:
         """
-        Perform comprehensive web searches and return structured results with titles, URLs, and snippets.
-        
-        This powerful tool performs web searches using privacy-focused search engines to find relevant
-        web pages, articles, documentation, and resources. It returns clean, structured results that
-        are perfect for research, fact-checking, and information gathering tasks.
-        
-        Key features:
-        - Academic and specialized search engines (Google Scholar, PubMed, IEEE, arXiv, medRxiv, bioRxiv)
-        - Clean, structured result format with titles, URLs, and descriptions
-        - Configurable number of results (up to 20)
-        - Intelligent result parsing and cleaning
-        - Fast execution with comprehensive error handling
-        - Rich metadata about search performance
-        
-        Search capabilities:
-        - General web search for any topic or question
-        - Technical documentation and tutorials
-        - News and current events
-        - Academic and research content
-        - Product information and reviews
-        - Troubleshooting and how-to guides
-        
-        Use cases:
-        - Research and fact-checking for content creation
-        - Finding relevant documentation and tutorials
-        - Discovering tools and resources for projects
-        - Gathering information for decision making
-        - Competitive analysis and market research
-        - Academic research and literature reviews
-        
-        Example usage:
-        - input: {"query": "Python web scraping tutorial"} - Find programming tutorials
-        - input: {"query": "best practices machine learning", "num_results": 5} - Research best practices
-        - input: {"query": "React component lifecycle methods", "num_results": 15} - Technical documentation
-        
-        Args:
-            input_data: WebSearchInput with search query and result preferences
-            
+        Perform general web searches using Google (default) or Bing (if specified).
+
         Returns:
             WebSearchOutput with structured search results and metadata
         """
-        query = input_data.query.strip()
-        engine = input_data.engine.lower()
-        num_results = min(input_data.num_results, 20)  # Cap at 20 for safety
-        
+        query = query.strip()
+        engine = engine.lower()
+        num_results = min(num_results, 20)
+
         start_time = time.time()
-        
-        logger.info(f"Searching for '{query}' using {engine} (max {num_results} results)")
-        
+        logger.info(f"Web search for '{query}' using {engine} (max {num_results} results)")
+
         if not query:
             return WebSearchOutput(
                 results=[],
@@ -128,9 +119,8 @@ def setup_search_tools(mcp, get_browser_manager: Callable):
                 status="error",
                 error="Search query cannot be empty"
             )
-        
+
         try:
-            # Get browser manager
             browser_manager = await get_browser_manager()
             if not browser_manager:
                 return WebSearchOutput(
@@ -140,8 +130,104 @@ def setup_search_tools(mcp, get_browser_manager: Callable):
                     status="error",
                     error="Browser manager not available"
                 )
-            
-            # Perform search based on engine
+
+            if engine == "bing":
+                results = await _search_bing(browser_manager, query, num_results)
+            else:
+                results = await _search_google(browser_manager, query, num_results)
+
+            duration = time.time() - start_time
+            metadata = {
+                "duration_seconds": round(duration, 2),
+                "results_requested": num_results,
+                "results_found": len(results),
+                "timestamp": time.time()
+            }
+
+            return WebSearchOutput(
+                results=results,
+                query=query,
+                engine=engine,
+                status="ok",
+                metadata=metadata
+            )
+
+        except Exception as e:
+            duration = time.time() - start_time
+            error_msg = str(e)
+            logger.error(f"Unexpected error during web search: {error_msg}")
+
+            return WebSearchOutput(
+                results=[],
+                query=query,
+                engine=engine,
+                status="error",
+                error=f"Web search error: {error_msg}",
+                metadata={"duration_seconds": round(duration, 2)}
+            )
+
+    @mcp.tool(
+        name="paper_search"
+    )
+    async def paper_search(
+        query: Annotated[str, Field(
+            description="Search query string to find relevant literature",
+            examples=[
+                "deep learning for medical imaging",
+                "CRISPR gene editing review",
+                "quantum computing algorithms",
+                "COVID-19 vaccine efficacy"
+            ],
+            min_length=1,
+            max_length=512
+        )],
+        engine: Annotated[str, Field(
+            default="google_scholar",
+            description="Academic search engine to use (google_scholar, pubmed, ieee, arxiv, medrxiv, biorxiv)",
+            examples=["google_scholar", "pubmed", "ieee", "arxiv", "medrxiv", "biorxiv"],
+            pattern="^(google_scholar|pubmed|ieee|arxiv|medrxiv|biorxiv)$"
+        )] = "google_scholar",
+        num_results: Annotated[int, Field(
+            default=10,
+            description="Maximum number of literature search results to return (capped at 20 for performance)",
+            ge=1,
+            le=20,
+            examples=[5, 10, 15, 20]
+        )] = 10
+    ) -> WebSearchOutput:
+        """
+        Perform literature searches and return structured results with titles, URLs, and snippets.
+
+        Returns:
+            WebSearchOutput with structured search results and metadata
+        """
+        query = query.strip()
+        engine = engine.lower()
+        num_results = min(num_results, 20)
+
+        start_time = time.time()
+        logger.info(f"Searching for '{query}' using {engine} (max {num_results} results)")
+
+        if not query:
+            return WebSearchOutput(
+                results=[],
+                query=query,
+                engine=engine,
+                status="error",
+                error="Search query cannot be empty"
+            )
+
+        try:
+            browser_manager = await get_browser_manager()
+            if not browser_manager:
+                return WebSearchOutput(
+                    results=[],
+                    query=query,
+                    engine=engine,
+                    status="error",
+                    error="Browser manager not available"
+                )
+
             if engine == "google_scholar":
                 results = await _search_google_scholar(browser_manager, query, num_results)
             elif engine == "pubmed":
@@ -162,8 +248,7 @@ def setup_search_tools(mcp, get_browser_manager: Callable):
                     status="error",
                     error=f"Unsupported search engine: {engine}"
                 )
-            
-            # Prepare metadata
+
             duration = time.time() - start_time
             metadata = {
                 "duration_seconds": round(duration, 2),
@@ -171,23 +256,20 @@ def setup_search_tools(mcp, get_browser_manager: Callable):
                 "results_found": len(results),
                 "timestamp": time.time()
             }
-            
-            output = WebSearchOutput(
+
+            return WebSearchOutput(
                 results=results,
                 query=query,
                 engine=engine,
                 status="ok",
                 metadata=metadata
             )
-            
-            logger.info(f"Search completed: found {len(results)} results in {duration:.2f}s")
-            return output
-            
+
         except Exception as e:
             duration = time.time() - start_time
             error_msg = str(e)
             logger.error(f"Unexpected error during search: {error_msg}")
-            
+
             return WebSearchOutput(
                 results=[],
                 query=query,
@@ -1290,26 +1372,119 @@ async def _wait_for_search_results(driver, max_wait: int = 15) -> None:
 def _get_search_page_info(driver) -> Dict[str, Any]:
     """Get information about the search results page for debugging."""
     info = {}
-    
+
     try:
         info["title"] = driver.title
         info["url"] = driver.current_url
-        
+
         # Count potential result elements
         result_selectors = [
             'article[data-testid="result"]',
             '.result',
             '[data-testid="result"]'
         ]
-        
+
         for selector in result_selectors:
             try:
                 elements = driver.find_elements("css selector", selector)
                 info[f"elements_{selector}"] = len(elements)
             except Exception:
                 info[f"elements_{selector}"] = 0
-        
+
     except Exception as e:
         info["error"] = str(e)
-    
+
     return info
+
+async def _search_google(browser_manager, query: str, num_results: int) -> List[SearchResult]:
+    """
+    Perform a search using Google.
+    """
+    results = []
+    try:
+        driver = await browser_manager.get_driver()
+        encoded_query = quote_plus(query)
+        search_url = f"https://www.google.com/search?q={encoded_query}"
+        logger.debug(f"Navigating to Google: {search_url}")
+        driver.get(search_url)
+        await _wait_for_search_results(driver)
+        html = driver.page_source
+        results = _parse_google_results(html, num_results)
+        logger.info(f"Extracted {len(results)} results from Google")
+    except Exception as e:
+        logger.error(f"Error searching Google: {e}")
+    return results
+
+async def _search_bing(browser_manager, query: str, num_results: int) -> List[SearchResult]:
+    """
+    Perform a search using Bing.
+    """
+    results = []
+    try:
+        driver = await browser_manager.get_driver()
+        encoded_query = quote_plus(query)
+        search_url = f"https://www.bing.com/search?q={encoded_query}"
+        logger.debug(f"Navigating to Bing: {search_url}")
+        driver.get(search_url)
+        await _wait_for_search_results(driver)
+        html = driver.page_source
+        results = _parse_bing_results(html, num_results)
+        logger.info(f"Extracted {len(results)} results from Bing")
+    except Exception as e:
+        logger.error(f"Error searching Bing: {e}")
+    return results
+
+def _parse_google_results(html: str, max_results: int) -> List[SearchResult]:
+    """
+    Parse Google search results from HTML.
+    """
+    results = []
+    try:
+        soup = parse_html_with_soup(html)
+        result_elements = soup.select('div.g')
+        for i, element in enumerate(result_elements[:max_results]):
+            try:
+                title_elem = element.select_one('h3')
+                link_elem = element.select_one('a')
+                snippet_elem = element.select_one('.VwiC3b, .IsZvec')
+                title = extract_element_text(title_elem) if title_elem else ""
+                url = link_elem['href'] if link_elem and link_elem.has_attr('href') else ""
+                snippet = extract_element_text(snippet_elem) if snippet_elem else ""
+                title = clean_text_content(title)
+                snippet = clean_text_content(snippet)
+                snippet = truncate_text(snippet, max_length=300)
+                if title and url:
+                    results.append(SearchResult(title=title, url=url, snippet=snippet))
+            except Exception as e:
+                logger.warning(f"Error extracting Google result {i}: {e}")
+                continue
+    except Exception as e:
+        logger.error(f"Error parsing Google results: {e}")
+    return results
+
+def _parse_bing_results(html: str, max_results: int) -> List[SearchResult]:
+    """
+    Parse Bing search results from HTML.
+    """
+    results = []
+    try:
+        soup = parse_html_with_soup(html)
+        result_elements = soup.select('li.b_algo')
+        for i, element in enumerate(result_elements[:max_results]):
+            try:
+                title_elem = element.select_one('h2 a')
+                snippet_elem = element.select_one('p')
+                title = extract_element_text(title_elem) if title_elem else ""
+                url = title_elem['href'] if title_elem and title_elem.has_attr('href') else ""
+                snippet = extract_element_text(snippet_elem) if snippet_elem else ""
+                title = clean_text_content(title)
+                snippet = clean_text_content(snippet)
+                snippet = truncate_text(snippet, max_length=300)
+                if title and url:
+                    results.append(SearchResult(title=title, url=url, snippet=snippet))
+            except Exception as e:
+                logger.warning(f"Error extracting Bing result {i}: {e}")
+                continue
+    except Exception as e:
+        logger.error(f"Error parsing Bing results: {e}")
+    return results

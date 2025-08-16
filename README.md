@@ -6,14 +6,22 @@ A Model Context Protocol (MCP) server that provides browser automation tools ove
 
 - **SSE Transport**: MCP server over SSE (Server-Sent Events) via FastMCP
 - **Browser Automation**: Selenium-powered Chrome automation with headless support
-- **Seven Core Tools**:
+- **Comprehensive Toolset** (14 tools):
   - `fetch_url`: Navigate to URLs and retrieve page content
   - `find_elements`: Parse web pages and extract element information  
   - `click_element`: Interact with page elements
   - `run_js_interaction`: Execute JavaScript in browser context
   - `download_pdfs`: Download PDF files with multiple strategies (auto/links/js)
-  - `web_search`: Academic search across multiple engines (Google Scholar, PubMed, IEEE, arXiv, medRxiv, bioRxiv)
+  - `web_search`: General web search (Google by default, Bing if specified)
+  - `paper_search`: Academic/literature search across multiple engines (Google Scholar, PubMed, IEEE, arXiv, medRxiv, bioRxiv)
   - `convert_to_markdown`: Convert HTML content or web pages to Markdown format
+  - `convert_file_to_markdown`: Convert a local HTML or PDF file to markdown and write to output
+  - `save_file`: Save raw content to a file at the specified path
+  - `fetch_and_save_url`: Fetch content from a URL and save it directly to a file
+  - `start_browser`: Start the Selenium browser session (if not already running)
+  - `stop_browser`: Stop the Selenium browser session (not the server)
+  - `restart_browser`: Restart the Selenium browser session (not the server)
+  - `shutdown_server`: Gracefully shut down the MCP server process
 - **Academic Focus**: Specialized search capabilities for research papers and scholarly content
 - **Security**: URL validation, domain allowlists, and private IP blocking
 - **Robust Error Handling**: Comprehensive error handling and retry logic
@@ -101,115 +109,30 @@ Configuration (exact location varies by version):
 
 ## Tools Overview
 
-### 1. `fetch_url`
-Navigate to any URL and retrieve page content with metadata.
+### Browser Control & Server Management
+- `start_browser`: Start the Selenium browser session (if not already running)
+- `stop_browser`: Stop the Selenium browser session (not the server)
+- `restart_browser`: Restart the Selenium browser session (not the server)
+- `shutdown_server`: Gracefully shut down the MCP server process
 
-**Input:**
-- `url` (string): The URL to fetch
+### Content Fetching & Extraction
+- `fetch_url`: Navigate to any URL and retrieve page content with metadata
+- `find_elements`: Parse web pages and extract information from elements using CSS or XPath selectors
+- `click_element`: Click on page elements and optionally wait for page changes
+- `run_js_interaction`: Execute JavaScript code in the browser context
 
-**Output:**
-- `final_url`: Final URL after redirects
-- `title`: Page title
-- `html`: Page HTML content
-- `status`: Success/error status
-- `metadata`: Additional page information
+### File Operations
+- `download_pdfs`: Download PDF files from web pages using multiple strategies
+- `save_file`: Save raw content to a file at the specified path
+- `fetch_and_save_url`: Fetch content from a URL and save it directly to a file
 
-### 2. `find_elements`
-Parse web pages and extract information from elements using CSS or XPath selectors.
+### Conversion & Search
+- `convert_to_markdown`: Convert HTML content or web pages to clean Markdown format
+- `convert_file_to_markdown`: Convert a local HTML or PDF file to markdown and write to output
+- `web_search`: General web search (Google/Bing)
+- `paper_search`: Academic/literature search (Google Scholar, PubMed, IEEE, arXiv, medRxiv, bioRxiv)
 
-**Input:**
-- `selector` (string): CSS or XPath selector
-- `by` (string): "css" or "xpath" 
-- `url` (string, optional): URL to navigate to first
-- `max_results` (integer, optional): Maximum elements to return
-
-**Output:**
-- `count`: Number of elements found
-- `elements`: Array of element information (text, attributes, HTML)
-- `url`: Current page URL
-- `metadata`: Selector and page information
-
-### 3. `click_element`
-Click on page elements and optionally wait for page changes.
-
-**Input:**
-- `selector` (string): Element selector
-- `by` (string): "css" or "xpath"
-- `url` (string, optional): URL to navigate to first
-- `wait_for_selector` (string, optional): Wait for this element after click
-- `wait_for_url_change` (boolean, optional): Wait for URL change
-- `timeout_s` (integer, optional): Maximum wait time
-
-**Output:**
-- `success`: Whether click succeeded
-- `final_url`: URL after click and navigation
-- `title`: Page title after click
-- `html`: Updated page HTML
-- `metadata`: Click and page information
-
-### 4. `run_js_interaction`
-Execute JavaScript code in the browser context.
-
-**Input:**
-- `script` (string): JavaScript code to execute
-- `url` (string, optional): URL to navigate to first
-- `args` (array, optional): Arguments to pass to script
-
-**Output:**
-- `result`: Script execution result (JSON-serializable)
-- `logs`: Console logs from execution
-- `url`: Current page URL
-- `metadata`: Execution information
-
-### 5. `download_pdfs`
-Download PDF files from web pages using multiple strategies.
-
-**Input:**
-- `url` (string): Page URL to process
-- `strategy` (string): "auto", "links", or "js"
-- `link_selector` (string, optional): CSS selector for PDF links (links strategy)
-- `js_action` (string, optional): JavaScript to trigger download (js strategy)
-- `max_files` (integer, optional): Maximum files to download
-
-**Output:**
-- `success`: Whether downloads succeeded
-- `downloaded_files`: List of downloaded file information
-- `directory`: Download directory path
-- `metadata`: Download process information
-
-### 6. `web_search`
-Search academic databases and repositories for research papers and scholarly content.
-
-**Input:**
-- `query` (string): Search query
-- `engine` (string): Search engine - "google_scholar", "pubmed", "ieee", "arxiv", "medrxiv", "biorxiv"
-- `num_results` (integer, optional): Maximum results to return (default: 10)
-
-**Output:**
-- `success`: Whether search succeeded
-- `results`: Array of search results with title, URL, snippet, authors, etc.
-- `metadata`: Search engine and query information
-
-**Supported Academic Engines:**
-- **Google Scholar**: General academic search
-- **PubMed**: Biomedical literature
-- **IEEE Xplore**: Engineering and technology papers
-- **arXiv**: Preprints in physics, mathematics, computer science
-- **medRxiv**: Medical preprints
-- **bioRxiv**: Biology preprints
-
-### 7. `convert_to_markdown`
-Convert HTML content or web pages to clean Markdown format.
-
-**Input:**
-- `content` (string, optional): HTML content to convert
-- `url` (string, optional): URL to fetch and convert
-- `content_type` (string, optional): Content type hint
-
-**Output:**
-- `success`: Whether conversion succeeded
-- `markdown`: Converted Markdown content
-- `metadata`: Conversion information
+See `mcp.json` for full tool descriptions and endpoints.
 
 ## Configuration
 
@@ -247,6 +170,10 @@ The server automatically:
 - **Domain Allowlists**: Optional restriction to specific hosts via `MCP_ALLOWED_HOSTS`
 - **Rate Limiting**: Built-in protections against abuse
 
+## MCP Tool Schema
+
+All MCP tools now use explicit Annotated parameters with Pydantic Field annotations for proper schema exposure and validation.
+
 ## Development
 
 ### Running Tests
@@ -278,6 +205,9 @@ mcp-browser/
 │   │   ├── parse.py        # find_elements tool  
 │   │   ├── interact.py     # click_element, run_js_interaction
 │   │   ├── pdf.py          # download_pdfs tool
+│   │   ├── convert.py      # convert_to_markdown, convert_file_to_markdown tools
+│   │   ├── save.py         # save_file, fetch_and_save_url tools
+│   │   ├── control.py      # start/stop/restart/shutdown tools
 │   │   └── search.py       # web_search tool
 │   └── utils/              # Shared utilities
 │       ├── io.py           # Path and file utilities
@@ -286,7 +216,7 @@ mcp-browser/
 ├── tests/                  # Test suites
 ├── .data/                  # Data directory (downloads, logs)
 ├── requirements.txt        # Python dependencies
-└── .env.example           # Environment configuration template
+└── .env.example            # Environment configuration template
 ```
 
 ## Troubleshooting
@@ -334,7 +264,7 @@ curl http://127.0.0.1:3333/sse
 ## Changelog
 
 ### v1.0.0
-- Initial release with all six core tools
+- Initial release with 14 tools (browser control, fetch, parse, interact, PDF, conversion, file ops, search, shutdown)
 - SSE transport with FastMCP
 - Chrome automation with Selenium
 - Security features and error handling

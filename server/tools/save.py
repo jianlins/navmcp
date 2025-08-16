@@ -4,7 +4,7 @@ Save tool for MCP Browser Tools
 Provides the save_file tool for writing large/untruncated content to files.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Annotated
 from pydantic import BaseModel, Field
 
 class SaveFileInput(BaseModel):
@@ -34,8 +34,16 @@ def setup_save_tools(mcp):
 
     @mcp.tool()
     async def save_file(
-        path: str,
-        content: str
+        path: Annotated[str, Field(
+            description="File path to save content to (relative to project root)",
+            examples=["output.html", "data/large.txt"],
+            min_length=1,
+            max_length=4096
+        )],
+        content: Annotated[str, Field(
+            description="Raw content to write to the file",
+            min_length=1
+        )]
     ) -> SaveFileOutput:
         import os
 
@@ -77,8 +85,16 @@ def setup_save_tools(mcp):
 
     @mcp.tool()
     async def fetch_and_save_url(
-        url: str,
-        path: str
+        url: Annotated[str, Field(
+            description="URL to fetch content from",
+            min_length=1,
+            max_length=2048
+        )],
+        path: Annotated[str, Field(
+            description="File path to save content to (relative to project root)",
+            min_length=1,
+            max_length=4096
+        )]
     ) -> FetchAndSaveUrlOutput:
         """
         Fetch content from a URL using the fetch tool (Selenium) and save it directly to a file.

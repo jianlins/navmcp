@@ -119,6 +119,17 @@ async def fetch_url(
 def setup_fetch_tools(mcp, get_browser_manager: Callable):
     """Setup fetch-related MCP tools."""
 
+    @mcp.tool(name="fetch_url")
+    async def fetch_url_mcp(
+        url: Annotated[str, Field(
+            description="The complete URL to fetch and navigate to (must include http:// or https://)",
+            examples=["https://www.example.com", "https://www.google.com/search?q=python"],
+            min_length=1,
+            max_length=2048
+        )]
+    ) -> FetchUrlOutput:
+        return await fetch_url(url, get_browser_manager)
+
     @mcp.tool()
     async def fetch_url_tool(
         url: Annotated[str, Field(
