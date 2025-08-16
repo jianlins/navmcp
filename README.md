@@ -1,4 +1,4 @@
-# navmcp --- An purely python-based Browser automation tools through mcp
+# navmcp --- A purely Python-based browser automation tool using MCP
 
 ---
 
@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server that provides browser automation tools ove
 
 - **SSE Transport**: MCP server over SSE (Server-Sent Events) via FastMCP
 - **Browser Automation**: Selenium-powered Chrome automation with headless support
-- **Comprehensive Toolset** (14 tools):
+- **Comprehensive Toolset** (15 tools):
 
   - `fetch_url`: Navigate to a URL using a real browser and retrieve the final page content, title, and metadata (handles redirects, bot protection, errors).
   - `find_elements`: Parse the current or specified web page and extract detailed information about elements using CSS selectors or XPath (text, attributes, HTML, visibility).
@@ -81,21 +81,21 @@ python -m navmcp
 
 ### MCP Client Configuration
 
-For Cline / Continue, VS Code Copilot Chat, and CodeGeeX, refer to the [`mcp.json`](./mcp.json) file in this repository for the recommended MCP server configuration.  
+For Cline, Continue, VS Code Copilot Chat, and CodeGeeX, refer to the [`mcp.json`](./mcp.json) file in this repository for the recommended MCP server configuration.  
 Copy or adapt the configuration from [`mcp.json`](./mcp.json) to your client settings as needed.
 
 - **Cline / Continue**: Use the configuration in [`mcp.json`](./mcp.json) for your `.continue/config.json`.
 - **VS Code Copilot Chat**: Reference [`mcp.json`](./mcp.json) for the MCP server settings in your VS Code configuration.
 - **CodeGeeX**: Use the details from [`mcp.json`](./mcp.json) for your MCP server setup (location varies by version).
 
-This ensures all clients use the same configuration and stay up-to-date.
+This ensures that all clients use the same configuration and remain up-to-date.
 
 ## Configuration
 
 ### Configuration Options
 
 You can configure the server using either a `.env` file or by setting environment variables directly before starting the server.  
-Most options can also be passed as environment variables in your shell.
+Most options can also be set as environment variables in your shell.
 
 ```bash
 # Example .env file or environment variables:
@@ -109,14 +109,14 @@ MCP_ALLOWED_HOSTS=
 MCP_CORS_ORIGINS=http://127.0.0.1,http://localhost
 ```
 
-For advanced usage, check if your server start command supports passing these options as command-line arguments.
+For advanced usage, check whether your server start command supports passing these options as command-line arguments.
 
 ### Browser Configuration
 
 The server automatically:
 - Uses Chrome with Selenium Manager (Selenium ≥4.6) for driver management
 - Falls back to webdriver-manager on Windows if needed
-- Configures headless mode for CI/server environments
+- Configures headless mode for CI and server environments
 - Sets up automatic PDF downloads without prompts
 - Creates download directories as needed
 
@@ -124,7 +124,7 @@ The server automatically:
 
 - **URL Validation**: Blocks invalid, file://, data:, and javascript: URLs
 - **Private IP Blocking**: Prevents access to local/private IP ranges by default
-- **Domain Allowlists**: Optional restriction to specific hosts via `MCP_ALLOWED_HOSTS`
+- **Domain Allowlists**: Optional restriction to specific hosts using `MCP_ALLOWED_HOSTS`
 - **Rate Limiting**: Built-in protections against abuse
 
 ## MCP Tool Schema
@@ -136,13 +136,13 @@ All MCP tools now use explicit Annotated parameters with Pydantic Field annotati
 ### Server Issues
 - **Server won't start**: Check if port 3333 is available, verify your Python environment, and ensure all dependencies in `requirements.txt` are installed.
 - **Browser errors**: Make sure Chrome is installed and up-to-date. Selenium Manager (Selenium ≥4.6) should auto-manage drivers, but on Windows, `webdriver-manager` is used as fallback.
-- **Download issues**: Ensure `.data/downloads` directory exists and is writable. On permission errors, run your shell as administrator.
+- **Download issues**: Ensure `.data/downloads` directory exists and is writable. If you encounter permission errors, run your shell as an administrator.
 - **Structured output errors**: If tool results are not returned as JSON, check your return type annotations and output schemas.
-- **Async errors**: For async tools, ensure you are not blocking the event loop with sync code. Use `anyio.to_thread.run_sync` for CPU-bound tasks.
+- **Async errors**: For asynchronous tools, ensure you are not blocking the event loop with synchronous code. Use `anyio.to_thread.run_sync` for CPU-bound tasks.
 
 ### Client Integration
 - **Tools not showing**: Confirm the server is running and accessible at `http://127.0.0.1:3333/`. Use `/health` and `/sse` endpoints to verify.
-- **CORS errors**: Add your client's origin to `MCP_CORS_ORIGINS` in your `.env` or environment config.
+- **CORS errors**: Add your client's origin to `MCP_CORS_ORIGINS` in your `.env` file or environment configuration.
 - **Timeout errors**: Increase timeout values in your environment configuration if requests are slow or failing.
 - **Schema validation errors**: Ensure your client sends parameters matching the tool's schema (see tool docs or `/sse` endpoint).
 
@@ -163,7 +163,7 @@ pytest tests/
 ## Requirements
 
 - **Python**: ≥3.10
-- **Chrome**: Installed (or automatically managed by Selenium Manager)
+- **Chrome**: Must be installed (or automatically managed by Selenium Manager)
 - **Dependencies**: See `requirements.txt`
 - **Operating System**: Windows (PowerShell commands), adaptable to other OSes
 
@@ -176,7 +176,7 @@ This project is licensed under the terms of the MIT License. See [LICENSE](./LIC
 - **Author:** Jianlin Shi
 - **GitHub:** [jianlins](https://github.com/jianlins)
 - **Project Issues:** [GitHub Issues](https://github.com/jianlins/navmcp/issues)
-- **Email:** your-email@example.com (replace with your actual email)
+- **Email:** your-email@example.com
 
 ## Useful Links
 
@@ -187,4 +187,4 @@ This project is licensed under the terms of the MIT License. See [LICENSE](./LIC
 
 ## Developer Documentation
 
-See [DEV_README.md](./DEV_README.md) for development, contributing, and changelog information.
+See [DEV_README.md](./DEV_README.md) for development, contribution, and changelog information.

@@ -49,7 +49,7 @@ jobs:
           exit 1
 
       - name: Run pytest
-        run: pytest
+        run: pytest -v
 
       - name: Stop server
         run: |
