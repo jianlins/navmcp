@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "local": {
+      "autoApprove": [
+        "convert_to_markdown",
+        "find_elements",
+        "fetch_url",
+        "click_element",
+        "run_js_interaction",
+        "web_search",
+        "download_pdfs",
+        "fetch_url_tool",
+        "save_file",
+        "fetch_and_save_url",
+        "paper_search"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "type": "sse",
+      "url": "http://localhost:3333/sse"
+    }
+    }
+}

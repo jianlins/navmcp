@@ -95,11 +95,11 @@ python -m navmcp
 
 ### MCP Client Configuration
 
-For Cline, Continue, VS Code Copilot Chat, and CodeGeeX, refer to the [`mcp.json`](./mcp.json) file in this repository for the recommended MCP server configuration.  
-Copy or adapt the configuration from [`mcp.json`](./mcp.json) to your client settings as needed.
+For Cline, Continue, VS Code Copilot Chat, and CodeGeeX, refer to the [`mcp.json`](./configs/mcp.json) file in this repository for the recommended MCP server configuration.  
+- **VS Code Copilot Chat**: Copy or adapt the configuration from [`mcp.json`](./mcp.json) to your workspace/.vscode/.
 
-- **Cline / Continue**: Use the configuration in [`mcp.json`](./mcp.json) for your `.continue/config.json`.
-- **VS Code Copilot Chat**: Reference [`mcp.json`](./mcp.json) for the MCP server settings in your VS Code configuration.
+- **Cline / Continue**: Use the configuration in [`cline_mcp_settings.json`](./configs/cline_mcp_settings.json) for your `cline_mcp_settings.json`. Or configure MCP server through the cline interface.
+- 
 - **CodeGeeX**: Use the details from [`mcp.json`](./mcp.json) for your MCP server setup (location varies by version).
 
 This ensures that all clients use the same configuration and remain up-to-date.
