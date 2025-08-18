@@ -22,8 +22,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/jianlins/navmcp"
 
-[tool.setuptools.packages.find]
-where = ["navmcp"]
+[tool.setuptools]
+packages=["navmcp", "navmcp.tools", "navmcp.utils"]
 
 [tool.setuptools.dynamic]
 version = {attr = "navmcp.version.__version__"}

@@ -71,11 +71,20 @@ jobs:
           python-version: "3.10"
       - name: Install build tools
         run: |
+          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+          bash miniconda.sh -b -p $HOME/miniconda
+          export PATH="$HOME/miniconda/bin:$PATH"
+          source $HOME/miniconda/etc/profile.d/conda.sh
+          conda create -y -n mcp-browser python=3.10
+          conda activate mcp-browser
           python -m pip install --upgrade pip
           pip install build twine
 
       - name: Build package
-        run: python -m build
+        run: |
+          source $HOME/miniconda/etc/profile.d/conda.sh
+          conda activate mcp-browser
+          python -m build
 
       - name: List dist directory contents
         run: ls -l dist || echo "dist directory not found"
