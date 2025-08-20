@@ -21,17 +21,15 @@ from navmcp.utils.net import validate_url_security, normalize_url
 class ConvertToMarkdownInput(BaseModel):
     """Input schema for convert_to_markdown tool."""
     content_type: str = Field(
-        description="Type of content to convert: 'url' for web pages, 'html' for HTML content, 'pdf_url' for PDF files, 'docx_url' for DOCX files from URL, or 'docx' for local DOCX content",
-        examples=["url", "html", "pdf_url", "docx_url", "docx"]
+        description="Type of content to convert: 'url' for web pages, 'html' for HTML content, or 'pdf_url' for PDF files",
+        examples=["url", "html", "pdf_url"]
     )
     content: str = Field(
-        description="The content to convert - URL for 'url'/'pdf_url'/'docx_url' types, HTML string for 'html', or local DOCX path for 'docx' type",
+        description="The content to convert - URL for 'url'/'pdf_url' types, or HTML string for 'html' type",
         examples=[
             "https://www.example.com", 
             "<html><body><h1>Hello World</h1></body></html>",
-            "https://www.example.com/document.pdf",
-            "https://www.example.com/document.docx",
-            "tmp/test.docx"
+            "https://www.example.com/document.pdf"
         ],
         min_length=1,
         max_length=50000
@@ -48,7 +46,6 @@ class ConvertToMarkdownOutput(BaseModel):
 
 def setup_convert_tools(mcp, get_browser_manager: Callable):
     """Setup conversion-related MCP tools."""
-    # MarkItDown handles HTML, PDF, and DOCX
 
     # DEBUG: Print all registered tool names after setup
     import sys
@@ -76,17 +73,17 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
     @mcp.tool()
     async def convert_file_to_markdown(
         input_path: Annotated[str, Field(
-            description="Path to the HTML or PDF file to convert"
+            description="Path to the HTML, PDF, or DOCX file to convert"
         )],
         output_path: Annotated[str, Field(
             description="Path to write the markdown output file"
         )],
         element_id: Annotated[Optional[str], Field(
-            description="Optional id of the HTML element to extract and convert. If provided and found, only that element's content will be converted."
+            description="Optional id of the HTML element to extract and convert. If provided and found, only that element's content will be converted (HTML only)."
         )] = ""
     ) -> Dict[str, Any]:
         """
-        Convert a local HTML or PDF file to markdown and write to output_path.
+        Convert a local HTML, PDF, or DOCX file to markdown and write to output_path.
 
         Usage:
         - To convert the entire file, omit element_id.
@@ -98,6 +95,10 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
             input_path="tmp/pubmed_40055694.html",
             output_path="tmp/pubmed_40055694.md",
             element_id="article-details"
+        )
+        convert_file_to_markdown(
+            input_path="tmp/test.docx",
+            output_path="tmp/test.md"
         )
         """
         start_time = time.time()
@@ -115,13 +116,11 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
                     target = soup.find(id=element_id)
                     if target:
                         html_fragment = str(target)
-                        # Convert only the fragment
                         import io
                         stream = io.BytesIO(html_fragment.encode("utf-8"))
                         markdown = markdownify.markdownify(stream, heading_style="ATX")
                         original_format = "html"
                     else:
-                        # Fallback to full file if id not found
                         error_msg = f"Element with id '{element_id}' not found. Converting full file instead."
                         result = md_converter.convert_local(input_path)
                         markdown = result.text_content
@@ -135,13 +134,16 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
                 result = md_converter.convert_local(input_path)
                 markdown = result.text_content
                 original_format = "pdf"
+            elif ext == ".docx":
+                result = md_converter.convert_local(input_path)
+                markdown = result.text_content
+                original_format = "docx"
             else:
                 return {
                     "success": False,
                     "error": f"Unsupported file extension: {ext}",
                     "status": "error"
                 }
-            # Write markdown to output_path
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(markdown)
             duration = time.time() - start_time
@@ -164,56 +166,57 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
     @mcp.tool()
     async def convert_to_markdown(
         content_type: Annotated[str, Field(
-            description="Type of content to convert: 'url' for web pages, 'html' for HTML content, 'pdf_url' for PDF files, 'docx_url' for DOCX files from URL, or 'docx' for local DOCX content",
-            examples=["url", "html", "pdf_url", "docx_url", "docx"]
+            description="Type of content to convert: 'url' for web pages, 'html' for HTML content, or 'pdf_url' for PDF files",
+            examples=["url", "html", "pdf_url"]
         )],
         content: Annotated[str, Field(
-            description="The content to convert - URL for 'url'/'pdf_url'/'docx_url' types, HTML string for 'html', or local DOCX path for 'docx' type",
+            description="The content to convert - URL for 'url'/'pdf_url' types, or HTML string for 'html' type",
             examples=[
                 "https://www.example.com", 
                 "<html><body><h1>Hello World</h1></body></html>",
-                "https://www.example.com/document.pdf",
-                "https://www.example.com/document.docx",
-                "tmp/test.docx"
+                "https://www.example.com/document.pdf"
             ],
             min_length=1,
             max_length=50000
         )]
     ) -> ConvertToMarkdownOutput:
         """
-        Convert PDF, HTML, or DOCX content to markdown format using MarkItDown.
+        Convert PDF or HTML content to markdown format using MarkItDown.
         
         This tool can convert content from various sources:
         - Web pages (URLs) - fetches HTML and converts to markdown
         - HTML content - directly converts HTML string to markdown  
         - PDF files (URLs) - downloads PDF and converts to markdown
-        - DOCX files (URLs or local) - downloads or reads DOCX and converts to markdown
         
-        The conversion uses Microsoft's MarkItDown library for all formats.
+        The conversion uses Microsoft's MarkItDown library which provides
+        high-quality conversion with proper formatting preservation.
         
         Key features:
-        - Supports HTML, PDF, and DOCX conversion
-        - Handles web page and DOCX fetching automatically
+        - Supports both HTML and PDF conversion
+        - Handles web page fetching automatically
         - Preserves document structure and formatting
         - Provides detailed error reporting
         
         Use cases:
-        - Converting web pages or DOCX to markdown for documentation
-        - Processing PDF/DOCX documents for text analysis
+        - Converting web pages to markdown for documentation
+        - Processing PDF documents for text analysis
         - Converting HTML content for markdown-based workflows
         - Creating readable text versions of documents
         
         Args:
-            content_type: The type of content ('url', 'html', 'pdf_url', 'docx_url', 'docx')
-            content: The content to convert (URL, HTML string, or local DOCX path)
+            content_type: The type of content ('url', 'html', or 'pdf_url')
+            content: The content to convert (URL or HTML string)
             
         Returns:
             ConvertToMarkdownOutput with markdown content and metadata
         """
         start_time = time.time()
+        
         logger.info(f"Converting {content_type} content to markdown")
+        
         try:
-            valid_types = ['url', 'html', 'pdf_url', 'docx_url', 'docx']
+            # Validate content type
+            valid_types = ['url', 'html', 'pdf_url']
             if content_type not in valid_types:
                 return ConvertToMarkdownOutput(
                     markdown="",
@@ -222,12 +225,17 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
                     status="error",
                     error=f"Invalid content_type. Must be one of: {valid_types}"
                 )
+            
+            # Initialize MarkItDown
             md_converter = MarkItDown()
-            # HTML
+            
+            # Handle different content types
             if content_type == 'html':
+                # Convert HTML string directly
                 result = await _convert_html_content(md_converter, content)
-            # PDF/HTML URLs
+                
             elif content_type in ['url', 'pdf_url']:
+                # Validate URL security for URL-based conversions
                 is_valid, error_msg = validate_url_security(content, allow_private=False)
                 if not is_valid:
                     logger.warning(f"URL validation failed for {content}: {error_msg}")
@@ -238,89 +246,27 @@ def setup_convert_tools(mcp, get_browser_manager: Callable):
                         status="error",
                         error=f"URL validation failed: {error_msg}"
                     )
+                
+                # Normalize URL
                 normalized_url = normalize_url(content)
+                
+                # Convert URL content
                 result = await _convert_url_content(md_converter, normalized_url, content_type)
-            # DOCX from URL
-            elif content_type == 'docx_url':
-                is_valid, error_msg = validate_url_security(content, allow_private=False)
-                if not is_valid:
-                    logger.warning(f"URL validation failed for {content}: {error_msg}")
-                    return ConvertToMarkdownOutput(
-                        markdown="",
-                        original_format="docx",
-                        conversion_success=False,
-                        status="error",
-                        error=f"URL validation failed: {error_msg}"
-                    )
-                import requests
-                with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as temp_docx:
-                    try:
-                        r = requests.get(content)
-                        r.raise_for_status()
-                        temp_docx.write(r.content)
-                        temp_docx_path = temp_docx.name
-                        # Use MarkItDown for DOCX
-                        result_obj = md_converter.convert_local(temp_docx_path)
-                        markdown = result_obj.text_content
-                        result = ConvertToMarkdownOutput(
-                            markdown=markdown,
-                            original_format="docx",
-                            conversion_success=True,
-                            status="ok",
-                            metadata={"source": "docx_url", "url": content}
-                        )
-                    except Exception as e:
-                        result = ConvertToMarkdownOutput(
-                            markdown="",
-                            original_format="docx",
-                            conversion_success=False,
-                            status="error",
-                            error=f"DOCX conversion failed: {str(e)}"
-                        )
-                    finally:
-                        try:
-                            os.unlink(temp_docx_path)
-                        except Exception:
-                            pass
-            # DOCX local file
-            elif content_type == 'docx':
-                if not os.path.exists(content):
-                    return ConvertToMarkdownOutput(
-                        markdown="",
-                        original_format="docx",
-                        conversion_success=False,
-                        status="error",
-                        error=f"DOCX file not found: {content}"
-                    )
-                try:
-                    result_obj = md_converter.convert_local(content)
-                    markdown = result_obj.text_content
-                    result = ConvertToMarkdownOutput(
-                        markdown=markdown,
-                        original_format="docx",
-                        conversion_success=True,
-                        status="ok",
-                        metadata={"source": "docx_local", "file_path": content}
-                    )
-                except Exception as e:
-                    result = ConvertToMarkdownOutput(
-                        markdown="",
-                        original_format="docx",
-                        conversion_success=False,
-                        status="error",
-                        error=f"DOCX conversion failed: {str(e)}"
-                    )
+            
             # Add timing metadata
             duration = time.time() - start_time
             result.metadata["duration_seconds"] = round(duration, 2)
             result.metadata["timestamp"] = time.time()
             result.metadata["content_type"] = content_type
+            
             logger.info(f"Conversion completed in {duration:.2f}s - Status: {result.status}")
             return result
+            
         except Exception as e:
             duration = time.time() - start_time
             error_msg = str(e)
             logger.error(f"Unexpected error during conversion: {error_msg}")
+            
             return ConvertToMarkdownOutput(
                 markdown="",
                 original_format=content_type,

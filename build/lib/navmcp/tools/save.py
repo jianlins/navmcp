@@ -115,7 +115,30 @@ def setup_save_tools(mcp):
                     error=f"Bot protection previously failed for domain: {get_root_domain(url)}",
                     metadata={"url": url}
                 )
+
+            # First attempt
             fetch_result = await fetch_url(url)
+            bot_protection = (
+                fetch_result.status == "error" and fetch_result.error and "Bot protection detected" in fetch_result.error
+            )
+            if bot_protection:
+                # Retry one more time
+                fetch_result_retry = await fetch_url(url)
+                bot_protection_retry = (
+                    fetch_result_retry.status == "error" and fetch_result_retry.error and "Bot protection detected" in fetch_result_retry.error
+                )
+                if bot_protection_retry:
+                    # Block domain and return error
+                    from navmcp.tools.fetch import block_domain
+                    block_domain(url)
+                    return FetchAndSaveUrlOutput(
+                        path=path,
+                        status="error",
+                        error=f"Bot protection detected after two attempts for domain: {get_root_domain(url)}",
+                        metadata=fetch_result_retry.metadata
+                    )
+                fetch_result = fetch_result_retry
+
             if fetch_result.status != "ok":
                 return FetchAndSaveUrlOutput(
                     path=path,
