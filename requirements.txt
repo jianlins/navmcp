@@ -13,6 +13,7 @@ tenacity>=8.2.0
 loguru>=0.7.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
-markitdown[pdf]>=0.1.2
+markitdown[pdf, docx]>=0.1.2
 markdownify
 undetected-chromedriver
+chrome-version

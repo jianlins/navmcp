@@ -5,6 +5,11 @@ Manages Selenium WebDriver lifecycle, Chrome configuration, and download setting
 """
 
 import os
+try:
+    import chrome_version
+    CHROME_VERSION_DETECT_AVAILABLE = True
+except ImportError:
+    CHROME_VERSION_DETECT_AVAILABLE = False
 import asyncio
 from typing import Optional
 from pathlib import Path
@@ -72,7 +77,19 @@ class BrowserManager:
                 raise ImportError("undetected-chromedriver is required for stealth automation.")
             try:
                 options = self._create_chrome_options()
-                self.driver = uc.Chrome(options=options, version_main=137)
+                # Detect Chrome version automatically
+                if CHROME_VERSION_DETECT_AVAILABLE:
+                    version_str = chrome_version.get_chrome_version()
+                    if version_str:
+                        major_version = int(version_str.split('.')[0])
+                        logger.info(f"Detected Chrome version: {version_str}, using major version: {major_version}")
+                        self.driver = uc.Chrome(options=options, version_main=major_version)
+                    else:
+                        logger.error("Could not detect Chrome version. Falling back to default version_main=137.")
+                        self.driver = uc.Chrome(options=options, version_main=137)
+                else:
+                    logger.error("chrome-version package not installed. Falling back to default version_main=137.")
+                    self.driver = uc.Chrome(options=options, version_main=137)
                 self.driver.set_page_load_timeout(self.page_load_timeout)
                 self.driver.set_script_timeout(self.script_timeout)
                 self.driver.implicitly_wait(5)
